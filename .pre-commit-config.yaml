@@ -1,0 +1,26 @@
+# Pre-commit hooks для N501-TTS Lite
+# Использует cargo fmt, clippy и test перед каждым коммитом
+
+repos:
+  - repo: local
+    hooks:
+      - id: rust-fmt
+        name: rust fmt
+        entry: cargo fmt
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: clippy
+        name: rust clippy
+        entry: cargo clippy -- -D warnings
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: tests
+        name: cargo test
+        entry: cargo test
+        language: system
+        pass_filenames: false
+        always_run: true
