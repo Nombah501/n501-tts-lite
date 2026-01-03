@@ -1,0 +1,38 @@
+# release-plz.toml configuration for N501-TTS Lite
+
+[config]
+git-tag = true
+git-tag-sign = false
+changelog-path = "CHANGELOG.md"
+no-dev-version = true
+tag-name = "{{version}}"
+skip-tag = false
+
+[changelog]
+path = "CHANGELOG.md"
+header = """
+# Change Log
+All notable changes to this project will be documented in this file.
+"""
+body = """
+## {{ version }} - {{ date | date(format="%Y-%m-%d") }}
+{{ for commit, sections in commits | sort(attribute="section") }}
+{{ if sections }}
+### {{ sections }}
+{{ for commit in sections.commits }}
+{{ commit.body }}
+{{ endfor }}
+{{ endfor }}
+"""
+trim = true
+
+[git]
+push = true
+sign-commits = false
+push-remote = "origin"
+
+[sections]
+New = ["feat", "feature"]
+Changes = ["fix", "perf", "refactor"]
+Build = ["build", "ci", "chore", "test"]
+Documentation = ["docs"]
