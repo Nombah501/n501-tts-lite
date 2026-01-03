@@ -1,0 +1,29 @@
+# This file describes who owns what in this repository.
+
+# APPROVERS
+# List of users who can approve pull requests
+* @Nombah501
+
+# CODE OWNERS
+# Mapping of files to owners
+
+# Core logic
+/src/core/ @Nombah501
+
+# UI/CLI interfaces
+/src/ui/ @Nombah501
+/src/cli/ @Nombah501
+
+# Models and audio processing
+/src/models/ @Nombah501
+
+# CI/CD
+.github/workflows/ @Nombah501
+
+# Documentation
+/docs/ @Nombah501
+README.md @Nombah501
+
+# DEFAULT OWNER
+# If no owner is specified, - default is:
+* @Nombah501

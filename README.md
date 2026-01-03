@@ -33,7 +33,7 @@ N501-TTS Lite решает проблему низкой продуктивно�
 **Linux/macOS:**
 ```bash
 # Скачать и установить
-curl -sSL https://raw.githubusercontent.com/yourusername/n501-tts-lite/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Nombah501/n501-tts-lite/main/scripts/install.sh | bash
 
 # Или через cargo (после релиза)
 cargo install n501-tts-lite
@@ -42,7 +42,7 @@ cargo install n501-tts-lite
 **Windows:**
 ```bash
 # Скачать .exe installer
-# https://github.com/yourusername/n501-tts-lite/releases/latest
+# https://github.com/Nombah501/n501-tts-lite/releases/latest
 
 # Запустить installer
 ```
@@ -124,8 +124,8 @@ MIT License — см. [LICENSE](LICENSE) для деталей
 
 ## 📞 Support
 
-- **GitHub Issues:** [Submit issue](https://github.com/yourusername/n501-tts-lite/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/n501-tts-lite/discussions)
+- **GitHub Issues:** [Submit issue](https://github.com/Nombah501/n501-tts-lite/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/Nombah501/n501-tts-lite/discussions)
 - **Email:** your-email@example.com
 
 ## 🗺️ Roadmap
