@@ -44,15 +44,5 @@ jobs:
     - name: Run tests
       run: cargo test --verbose --all-features
 
-    - name: Generate coverage
-      uses: actions-rs/tarpaulin-rs-action@v0.1
-      with:
-        args: '--workspace --all-features -- --test-threads=1'
-      if: hashFiles('**/Cargo.lock')
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./cobertura.xml
-        token: ${{ secrets.CODECOV_TOKEN }}
-      if: hashFiles('**/Cargo.lock')
+    # Coverage reporting добавлено позже после инициализации проекта
+    # когда будет Cargo.toml и tarpaulin crate в зависимостях
