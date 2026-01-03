@@ -1,5 +1,11 @@
 # N501-TTS Lite
 
+![CI](https://github.com/Nombah501/n501-tts-lite/workflows/ci.yaml/badge.svg)
+[![codecov](https://codecov.io/gh/Nombah501/n501-tts-lite/branch/main/graph/badge.svg)](https://codecov.io/gh/Nombah501/n501-tts-lite)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+[![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
+[![Tauri](https://img.shields.io/badge/Tauri-v1.0+-lightblue.svg)](https://tauri.app)
+
 > Высококачественный CLI инструмент для профессиональной диктовки текста с автоматическим помещением в буфер обмена.
 
 ## 🎯 Vision
@@ -97,8 +103,11 @@ tts-lite config set hotkey "Cmd+Shift+T"
 
 ## 🤝 Contributing
 
-Мы рады contributions! Пожалуйста:
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/Nombah501/n501-tts-lite/blob/main/CONTRIBUTING.md)
 
+Мы рады contributions! Пожалуйста, прочитайте [Contributing Guidelines](CONTRIBUTING.md) перед началом работы.
+
+**Quick Start:**
 1. Fork репозитория
 2. Создать feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit ваши изменения (`git commit -m 'feat: добавить amazing feature'`)
@@ -107,10 +116,48 @@ tts-lite config set hotkey "Cmd+Shift+T"
 
 ### Code Style
 
-- Используйте Conventional Commits
+- Используйте [Conventional Commits](CONTRIBUTING.md#commit-message-guidelines)
 - `cargo fmt` перед коммитом
 - `cargo clippy` для проверки warnings
 - Добавляйте тесты для новых функций
+
+## 📄 License
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+Этот проект лицензирован под MIT License — см. [LICENSE](LICENSE) для деталей.
+
+## 🙏 Acknowledgments
+
+- [Whisper](https://github.com/openai/whisper) — OpenAI speech recognition
+- [Tauri](https://tauri.app/) — Cross-platform GUI framework
+- [Rust](https://www.rust-lang.org/) — The programming language
+- [OpenAI](https://openai.com/) — Whisper model
+
+## 📞 Support
+
+- 📋 **GitHub Issues:** [Submit issue](https://github.com/Nombah501/n501-tts-lite/issues)
+- 💬 **GitHub Discussions:** [Ask questions](https://github.com/Nombah501/n501-tts-lite/discussions)
+- 📧 **Security:** [Report vulnerability](SECURITY.md)
+- 📧 **Email:** security@example.com
+
+## 📄 Documentation
+
+- [Contributing Guidelines](CONTRIBUTING.md) — Как вносить вклад
+- [Code of Conduct](CODE_OF_CONDUCT.md) — Community guidelines
+- [Security Policy](SECURITY.md) — Vulnerability reporting
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Nombah501/n501-tts-lite&type=Date)](https://star-history.com/#Nombah501/n501-tts-lite&Date)
+
+---
+
+**Built by developers, for developers** 🚀
+
+---
+
+*Это проект разработан и поддерживается с ❤️* **[Nombah501](https://github.com/Nombah501)*
 
 ## 📄 License
 
