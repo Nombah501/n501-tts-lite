@@ -1,3 +1,22 @@
 {
-  "$schema": "https://schema.tauri.app/config.json"
+  "$schema": "https://schema.tauri.app/config.json",
+  "productName": "n501-tts-lite",
+  "version": "0.1.0",
+  "identifier": "com.n501.tts.lite",
+  "build": {
+    "beforeDevCommand": "npm --prefix ../src run dev",
+    "beforeBuildCommand": "npm --prefix ../src run build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../src/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "n501-tts-lite",
+        "width": 480,
+        "height": 320,
+        "resizable": false
+      }
+    ]
+  }
 }
