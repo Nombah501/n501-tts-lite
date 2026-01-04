@@ -75,7 +75,7 @@ pub fn spawn_inference_actor(
               prefer_gpu: false,
             };
 
-            let engine = if let Some(existing) = engine_slot {
+            let mut engine = if let Some(existing) = engine_slot {
               existing
             } else {
               WhisperEngine::new(engine_config)?

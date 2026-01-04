@@ -3,19 +3,23 @@ use std::thread;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Sample, SampleFormat, StreamConfig};
+use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
 use tracing::error;
 
+use serde::Serialize;
+
 use crate::services::InferenceCommand;
+use crate::state::AppState;
 
 #[derive(Debug)]
 pub enum AudioCommand {
     Start,
     Stop,
-    Cancel,
 }
 
 pub fn spawn_audio_actor(
+    app_handle: AppHandle,
     inference_sender: mpsc::Sender<InferenceCommand>,
 ) -> mpsc::Sender<AudioCommand> {
     let (sender, mut receiver) = mpsc::channel(8);
@@ -39,15 +43,19 @@ pub fn spawn_audio_actor(
                         Ok((stream, sample_rate)) => {
                             if let Err(error) = stream.play() {
                                 error!("Не удалось запустить аудио поток: {error}");
+                                update_recording_state(&app_handle, false);
                                 continue;
                             }
 
                             _current_stream = Some(stream);
                             current_sample_rate = sample_rate;
                             is_recording = true;
+                            update_recording_state(&app_handle, true);
+                            let _ = app_handle.emit("audio:started", ());
                         }
                         Err(error) => {
                             error!("Не удалось открыть входной поток: {error}");
+                            update_recording_state(&app_handle, false);
                         }
                     }
                 }
@@ -56,25 +64,43 @@ pub fn spawn_audio_actor(
                         is_recording = false;
                         _current_stream = None;
                         let samples = take_buffer(&buffer);
+                        let has_samples = !samples.is_empty();
 
-                        if !samples.is_empty() {
+                        if has_samples {
                             let _ = inference_sender.blocking_send(InferenceCommand::Transcribe {
                                 samples,
                                 sample_rate: current_sample_rate,
                             });
                         }
+
+                        update_recording_state(&app_handle, false);
+                        let _ =
+                            app_handle.emit("audio:stopped", AudioStoppedPayload { has_samples });
                     }
-                }
-                AudioCommand::Cancel => {
-                    is_recording = false;
-                    _current_stream = None;
-                    clear_buffer(&buffer);
                 }
             }
         }
     });
 
     sender
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct AudioStoppedPayload {
+    has_samples: bool,
+}
+
+fn update_recording_state(app_handle: &AppHandle, value: bool) {
+    let recording_state = {
+        let state = app_handle.state::<AppState>();
+        Arc::clone(&state.recording_state)
+    };
+
+    let lock_result = recording_state.lock();
+    if let Ok(mut guard) = lock_result {
+        *guard = value;
+    }
 }
 
 fn start_input_stream(buffer: &Arc<Mutex<Vec<f32>>>) -> Result<(cpal::Stream, u32), String> {

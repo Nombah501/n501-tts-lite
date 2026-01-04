@@ -3,6 +3,8 @@ use tauri::{AppHandle, Emitter, State};
 
 use crate::models::{AppConfig, AppError, ConfigUpdatedPayload};
 use crate::services::AudioCommand;
+#[cfg(desktop)]
+use crate::services::{parse_record_hotkey, rebind_record_hotkey};
 use crate::state::AppState;
 
 #[derive(Debug, Deserialize)]
@@ -12,6 +14,7 @@ pub struct UpdateConfigPayload {
   pub model_url: String,
   pub model_sha256: String,
   pub model_filename: String,
+  pub record_hotkey: String,
 }
 
 #[tauri::command]
@@ -47,17 +50,24 @@ pub fn update_config(
   state: State<'_, AppState>,
   payload: UpdateConfigPayload,
 ) -> Result<(), AppError> {
+  #[cfg(desktop)]
+  let shortcut = parse_record_hotkey(&payload.record_hotkey)?;
+
   let new_config = AppConfig {
     model: payload.model,
     model_url: payload.model_url,
     model_sha256: payload.model_sha256,
     model_filename: payload.model_filename,
+    record_hotkey: payload.record_hotkey,
   };
 
   state.config_manager.update(new_config.clone())?;
   app_handle
-    .emit("config:updated", ConfigUpdatedPayload { config: new_config })
+    .emit("config:updated", ConfigUpdatedPayload { config: new_config.clone() })
     .map_err(|error| AppError::new("CONFIG_EMIT", error.to_string()))?;
+
+  #[cfg(desktop)]
+  rebind_record_hotkey(&app_handle, shortcut)?;
 
   Ok(())
 }

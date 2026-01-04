@@ -6,10 +6,15 @@ export type AppConfig = {
   modelUrl: string
   modelSha256: string
   modelFilename: string
+  recordHotkey: string
 }
 
 export type TranscriptionSuccessPayload = {
   text: string
+}
+
+export type AudioStoppedPayload = {
+  hasSamples: boolean
 }
 
 export type AppErrorPayload = {
@@ -38,6 +43,13 @@ export const onTranscriptionSuccess = (
 export const onTranscriptionError = (
   handler: (payload: AppErrorPayload) => void,
 ) => listen<AppErrorPayload>('transcription:error', (event) => handler(event.payload))
+
+export const onAudioStarted = (handler: () => void) =>
+  listen('audio:started', () => handler())
+
+export const onAudioStopped = (
+  handler: (payload: AudioStoppedPayload) => void,
+) => listen<AudioStoppedPayload>('audio:stopped', (event) => handler(event.payload))
 
 export const onConfigUpdated = (
   handler: (payload: { config: AppConfig }) => void,

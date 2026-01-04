@@ -12,6 +12,13 @@ export const SettingsPanel = ({ config, onSave }: SettingsPanelProps) => {
   const [modelUrl, setModelUrl] = useState(config.modelUrl)
   const [modelSha256, setModelSha256] = useState(config.modelSha256)
   const [modelFilename, setModelFilename] = useState(config.modelFilename)
+  const [recordHotkey, setRecordHotkey] = useState(config.recordHotkey)
+
+  const hotkeyOptions = [
+    { value: 'ctrl+shift+space', label: 'Ctrl+Shift+Space' },
+    { value: 'alt+shift+space', label: 'Alt+Shift+Space' },
+    { value: 'cmd+shift+space', label: 'Cmd+Shift+Space (macOS)' },
+  ]
 
   return (
     <section className="panel">
@@ -61,6 +68,24 @@ export const SettingsPanel = ({ config, onSave }: SettingsPanelProps) => {
             onChange={(event) => setModelFilename(event.target.value)}
           />
         </label>
+        <label className="field">
+          <span className="field-label">Горячая клавиша записи</span>
+          <select
+            className="field-input"
+            value={recordHotkey}
+            onChange={(event) => setRecordHotkey(event.target.value)}
+          >
+            {hotkeyOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="field-hint">
+          Можно менять хоткей между Ctrl/Alt и Cmd для macOS. Изменение применяется
+          сразу после сохранения.
+        </p>
         <p className="field-hint">
           Нужны URL и SHA256 для загрузки и проверки модели. Файл сохраняется в
           кэш приложения.
@@ -75,6 +100,7 @@ export const SettingsPanel = ({ config, onSave }: SettingsPanelProps) => {
               modelUrl,
               modelSha256,
               modelFilename,
+              recordHotkey,
             })
           }
         >

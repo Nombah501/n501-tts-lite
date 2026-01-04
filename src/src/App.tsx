@@ -29,6 +29,7 @@ function App() {
 
   return (
     <div className="app">
+      {error && <div className="toast">{error}</div>}
       <header className="hero">
         <div className="hero-text">
           <p className="hero-eyebrow">n501-tts-lite</p>
@@ -44,7 +45,12 @@ function App() {
           </div>
         </div>
         <div className="hero-card">
-          <StatusPanel status={status} lastText={lastText} error={error} />
+          <StatusPanel
+            status={status}
+            lastText={lastText}
+            error={error}
+            recordHotkey={config.recordHotkey}
+          />
         </div>
       </header>
 
@@ -68,7 +74,7 @@ function App() {
 
         {isLoaded && (
           <SettingsPanel
-            key={`${config.model}-${config.modelUrl}-${config.modelSha256}-${config.modelFilename}`}
+            key={`${config.model}-${config.modelUrl}-${config.modelSha256}-${config.modelFilename}-${config.recordHotkey}`}
             config={config}
             onSave={save}
           />

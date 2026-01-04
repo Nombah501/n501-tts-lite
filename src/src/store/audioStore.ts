@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 
 import {
+  onAudioStarted,
+  onAudioStopped,
   onTranscriptionError,
   onTranscriptionSuccess,
   startRecord,
@@ -30,6 +32,14 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     }
 
     listenersBound = true
+
+    onAudioStarted(() => {
+      set({ status: 'recording', error: null })
+    })
+
+    onAudioStopped((payload) => {
+      set({ status: payload.hasSamples ? 'processing' : 'idle' })
+    })
 
     onTranscriptionSuccess((payload) => {
       set({ status: 'idle', lastText: payload.text, error: null })

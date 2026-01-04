@@ -1,9 +1,11 @@
+use std::sync::{Arc, Mutex};
+
 use tokio::sync::mpsc;
 
-use crate::services::{AudioCommand, ConfigManager, InferenceCommand};
+use crate::services::{AudioCommand, ConfigManager};
 
 pub struct AppState {
     pub audio_sender: mpsc::Sender<AudioCommand>,
-    pub inference_sender: mpsc::Sender<InferenceCommand>,
     pub config_manager: ConfigManager,
+    pub recording_state: Arc<Mutex<bool>>,
 }
