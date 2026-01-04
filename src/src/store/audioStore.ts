@@ -18,6 +18,19 @@ type AudioState = {
   init: () => void
   start: () => Promise<void>
   stop: () => Promise<void>
+  clearError: () => void
+}
+
+const ERROR_MESSAGES = {
+  unknown: 'Неизвестная ошибка',
+} as const
+
+const toMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return ERROR_MESSAGES.unknown
 }
 
 let listenersBound = false
@@ -71,12 +84,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       set({ status: 'idle', error: toMessage(error) })
     }
   },
+  clearError: () => {
+    set({ error: null })
+  },
 }))
-
-const toMessage = (error: unknown) => {
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return 'Неизвестная ошибка'
-}

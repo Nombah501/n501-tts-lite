@@ -1,9 +1,15 @@
 import type { AudioStatus } from '../store/audioStore'
 
-const labelMap: Record<AudioStatus, string> = {
+const BUTTON_LABELS: Record<AudioStatus, string> = {
   idle: 'Начать запись',
   recording: 'Остановить',
   processing: 'Обработка...',
+}
+
+const BUTTON_ARIA_LABELS: Record<AudioStatus, string> = {
+  idle: 'Начать запись голоса',
+  recording: 'Остановить запись',
+  processing: 'Идет обработка аудио',
 }
 
 type FloatingButtonProps = {
@@ -21,9 +27,12 @@ export const FloatingButton = ({ status, onToggle }: FloatingButtonProps) => {
       onClick={onToggle}
       disabled={isBusy}
       type="button"
+      aria-label={BUTTON_ARIA_LABELS[status]}
+      aria-pressed={isRecording}
+      aria-busy={isBusy}
     >
-      <span className="floating-indicator" />
-      {labelMap[status]}
+      <span className="floating-indicator" aria-hidden="true" />
+      {BUTTON_LABELS[status]}
     </button>
   )
 }

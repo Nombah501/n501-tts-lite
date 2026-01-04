@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use tauri::{AppHandle, Emitter, State};
 
-use crate::models::{AppConfig, AppError, ConfigUpdatedPayload};
+use crate::models::{AppConfig, AppError, ConfigUpdatedPayload, ModelPreset};
 use crate::services::AudioCommand;
 #[cfg(desktop)]
 use crate::services::{parse_record_hotkey, rebind_record_hotkey};
@@ -10,6 +10,7 @@ use crate::state::AppState;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateConfigPayload {
+  pub model_preset: String,
   pub model: String,
   pub model_url: String,
   pub model_sha256: String,
@@ -54,6 +55,7 @@ pub fn update_config(
   let shortcut = parse_record_hotkey(&payload.record_hotkey)?;
 
   let new_config = AppConfig {
+    model_preset: payload.model_preset,
     model: payload.model,
     model_url: payload.model_url,
     model_sha256: payload.model_sha256,
@@ -70,4 +72,16 @@ pub fn update_config(
   rebind_record_hotkey(&app_handle, shortcut)?;
 
   Ok(())
+}
+
+#[tauri::command]
+pub fn get_preset(preset_name: String) -> Result<ModelPreset, AppError> {
+  use crate::models::get_preset;
+
+  get_preset(&preset_name).ok_or_else(|| {
+    AppError::new(
+      "PRESET_NOT_FOUND",
+      format!("Пресет с именем '{}' не найден", preset_name),
+    )
+  })
 }

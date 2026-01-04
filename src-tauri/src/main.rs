@@ -105,6 +105,7 @@ fn main() {
       commands::stop_record,
       commands::get_config,
       commands::update_config,
+      commands::get_preset,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
