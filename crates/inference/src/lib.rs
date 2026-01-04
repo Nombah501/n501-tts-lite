@@ -44,12 +44,22 @@ pub struct WhisperModelConfig {
     pub filename: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct WhisperEngineConfig {
     pub model: WhisperModelConfig,
     pub cache_dir: PathBuf,
     pub prefer_gpu: bool,
+    pub download_progress: Option<DownloadProgressCallback>,
 }
+
+#[derive(Debug, Clone)]
+pub struct DownloadProgress {
+    pub asset: &'static str,
+    pub downloaded_bytes: u64,
+    pub total_bytes: Option<u64>,
+}
+
+type DownloadProgressCallback = std::sync::Arc<dyn Fn(DownloadProgress) + Send + Sync>;
 
 enum WhisperModel {
     Normal(whisper::model::Whisper),
@@ -107,9 +117,11 @@ const DOWNLOAD_TIMEOUT_SECS: u64 = 30;
 impl WhisperEngine {
     pub fn new(config: WhisperEngineConfig) -> Result<Self, InferenceError> {
         let model_path = config.cache_dir.join(&config.model.filename);
-        ensure_model(&model_path, &config.model)?;
+        let progress = config.download_progress.clone();
+        ensure_model(&model_path, &config.model, progress.as_ref())?;
 
-        let (config_path, tokenizer_path) = ensure_model_assets(&config.cache_dir, &config.model)?;
+        let (config_path, tokenizer_path) =
+            ensure_model_assets(&config.cache_dir, &config.model, progress.as_ref())?;
         let config_contents = fs::read_to_string(&config_path)
             .map_err(|error| InferenceError::ModelConfig(error.to_string()))?;
         let whisper_config: whisper::Config = serde_json::from_str(&config_contents)
@@ -184,6 +196,7 @@ impl WhisperEngine {
 fn ensure_model_assets(
     cache_dir: &Path,
     model: &WhisperModelConfig,
+    progress: Option<&DownloadProgressCallback>,
 ) -> Result<(PathBuf, PathBuf), InferenceError> {
     let config_path = cache_dir.join("config.json");
     let tokenizer_path = cache_dir.join("tokenizer.json");
@@ -204,7 +217,7 @@ fn ensure_model_assets(
 
     if !config_path.exists() {
         let url = format!("{base_url}/config.json");
-        download_to_path(&url, &config_path).map_err(|error| {
+        download_to_path(&url, &config_path, "config", progress).map_err(|error| {
             InferenceError::Download(format!(
                 "{error}. Ожидается config.json рядом с моделью или по адресу {url}"
             ))
@@ -213,7 +226,7 @@ fn ensure_model_assets(
 
     if !tokenizer_path.exists() {
         let url = format!("{base_url}/tokenizer.json");
-        download_to_path(&url, &tokenizer_path).map_err(|error| {
+        download_to_path(&url, &tokenizer_path, "tokenizer", progress).map_err(|error| {
             InferenceError::Download(format!(
                 "{error}. Ожидается tokenizer.json рядом с моделью или по адресу {url}"
             ))
@@ -421,7 +434,11 @@ fn mel_to_hz(mel: f32) -> f32 {
     700.0 * (10_f32.powf(mel / 2595.0) - 1.0)
 }
 
-fn ensure_model(path: &Path, model: &WhisperModelConfig) -> Result<(), InferenceError> {
+fn ensure_model(
+    path: &Path,
+    model: &WhisperModelConfig,
+    progress: Option<&DownloadProgressCallback>,
+) -> Result<(), InferenceError> {
     if model.url.trim().is_empty()
         || model.sha256.trim().is_empty()
         || model.filename.trim().is_empty()
@@ -448,7 +465,7 @@ fn ensure_model(path: &Path, model: &WhisperModelConfig) -> Result<(), Inference
     }
 
     let temp_path = path.with_extension("download");
-    download_to_path(&model.url, &temp_path)?;
+    download_to_path(&model.url, &temp_path, "model", progress)?;
 
     let checksum = compute_sha256(&temp_path)?;
     if checksum != model.sha256.to_lowercase() {
@@ -464,7 +481,12 @@ fn ensure_model(path: &Path, model: &WhisperModelConfig) -> Result<(), Inference
     Ok(())
 }
 
-fn download_to_path(url: &str, path: &Path) -> Result<(), InferenceError> {
+fn download_to_path(
+    url: &str,
+    path: &Path,
+    asset: &'static str,
+    progress: Option<&DownloadProgressCallback>,
+) -> Result<(), InferenceError> {
     let agent = ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(DOWNLOAD_TIMEOUT_SECS))
         .timeout_read(Duration::from_secs(DOWNLOAD_TIMEOUT_SECS))
@@ -476,15 +498,19 @@ fn download_to_path(url: &str, path: &Path) -> Result<(), InferenceError> {
         .call()
         .map_err(|error| InferenceError::Download(error.to_string()))?;
 
-    if let Some(length) = response.header("Content-Length") {
-        if let Ok(size) = length.parse::<u64>() {
-            if size > MAX_MODEL_BYTES {
-                return Err(InferenceError::Download(
-                    "Файл модели превышает лимит размера".to_string(),
-                ));
-            }
+    let content_length = response
+        .header("Content-Length")
+        .and_then(|length| length.parse::<u64>().ok());
+
+    if let Some(size) = content_length {
+        if size > MAX_MODEL_BYTES {
+            return Err(InferenceError::Download(
+                "Файл модели превышает лимит размера".to_string(),
+            ));
         }
     }
+
+    report_progress(progress, asset, 0, content_length);
 
     let mut reader = response.into_reader();
     let mut file = fs::File::create(path)?;
@@ -513,9 +539,26 @@ fn download_to_path(url: &str, path: &Path) -> Result<(), InferenceError> {
             let _ = fs::remove_file(path);
             return Err(InferenceError::Io(error));
         }
+
+        report_progress(progress, asset, total, content_length);
     }
 
     Ok(())
+}
+
+fn report_progress(
+    progress: Option<&DownloadProgressCallback>,
+    asset: &'static str,
+    downloaded_bytes: u64,
+    total_bytes: Option<u64>,
+) {
+    if let Some(callback) = progress {
+        callback(DownloadProgress {
+            asset,
+            downloaded_bytes,
+            total_bytes,
+        });
+    }
 }
 
 fn compute_sha256(path: &Path) -> Result<String, InferenceError> {

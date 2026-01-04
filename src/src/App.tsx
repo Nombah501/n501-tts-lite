@@ -6,17 +6,26 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { StatusPanel } from './components/StatusPanel'
 import { useAudioStore } from './store/audioStore'
 import { useConfigStore } from './store/configStore'
+import { useModelStore } from './store/modelStore'
 
 function App() {
   const { status, lastText, error, init: initAudio, start, stop } =
     useAudioStore()
   const { config, isLoaded, init: initConfig, load, save } = useConfigStore()
+  const {
+    isDownloading,
+    modelName,
+    error: modelError,
+    download,
+    init: initModel,
+  } = useModelStore()
 
   useEffect(() => {
     initAudio()
     initConfig()
+    initModel()
     load()
-  }, [initAudio, initConfig, load])
+  }, [initAudio, initConfig, initModel, load])
 
   const handleToggle = () => {
     if (status === 'recording') {
@@ -29,7 +38,9 @@ function App() {
 
   return (
     <div className="app">
-      {error && <div className="toast">{error}</div>}
+      {(error || modelError) && (
+        <div className="toast">{error ?? modelError}</div>
+      )}
       <header className="hero">
         <div className="hero-text">
           <p className="hero-eyebrow">n501-tts-lite</p>
@@ -51,6 +62,11 @@ function App() {
             error={error}
             recordHotkey={config.recordHotkey}
           />
+          {isDownloading && (
+            <p className="status-download">
+              Загружаем {modelName ?? 'модель'}: {download.asset ?? 'asset'}
+            </p>
+          )}
         </div>
       </header>
 
@@ -77,6 +93,8 @@ function App() {
             key={`${config.model}-${config.modelUrl}-${config.modelSha256}-${config.modelFilename}-${config.recordHotkey}`}
             config={config}
             onSave={save}
+            download={download}
+            isDownloading={isDownloading}
           />
         )}
       </main>

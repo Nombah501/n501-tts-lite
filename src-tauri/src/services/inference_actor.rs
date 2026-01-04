@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use arboard::Clipboard;
-use inference::{InferenceError, WhisperEngine, WhisperEngineConfig, WhisperModelConfig};
+
+use inference::{
+  DownloadProgress, InferenceError, WhisperEngine, WhisperEngineConfig, WhisperModelConfig,
+};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
@@ -24,6 +27,27 @@ struct TranscriptionSuccessPayload {
 #[serde(rename_all = "camelCase")]
 struct TranscriptionErrorPayload {
   error: AppError,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct ModelDownloadProgressPayload {
+  asset: String,
+  downloaded_bytes: u64,
+  total_bytes: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct ModelDownloadStatusPayload {
+  model: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct ModelErrorPayload {
+  message: String,
+  kind: String,
 }
 
 pub fn spawn_inference_actor(
@@ -67,12 +91,41 @@ pub fn spawn_inference_actor(
           let app_handle = app_handle.clone();
           let cache_dir = Arc::clone(&cache_dir);
           let engine_slot = cached_engine.take();
+          let should_report_download = engine_slot.is_none();
+          let model_name = model_config.name.clone();
+
+          if should_report_download {
+            let _ = app_handle.emit(
+              "model:download-started",
+              ModelDownloadStatusPayload {
+                model: model_name.clone(),
+              },
+            );
+          }
+
+          let progress_handle = app_handle.clone();
+          let download_progress: Option<Arc<dyn Fn(DownloadProgress) + Send + Sync>> =
+            if should_report_download {
+              Some(Arc::new(move |progress: DownloadProgress| {
+                let _ = progress_handle.emit(
+                  "model:download-progress",
+                  ModelDownloadProgressPayload {
+                    asset: progress.asset.to_string(),
+                    downloaded_bytes: progress.downloaded_bytes,
+                    total_bytes: progress.total_bytes,
+                  },
+                );
+              }))
+            } else {
+              None
+            };
 
           let result = tokio::task::spawn_blocking(move || {
             let engine_config = WhisperEngineConfig {
               model: model_config,
               cache_dir: (*cache_dir).clone(),
               prefer_gpu: false,
+              download_progress,
             };
 
             let mut engine = if let Some(existing) = engine_slot {
@@ -88,6 +141,13 @@ pub fn spawn_inference_actor(
 
           match result {
             Ok(Ok((engine, text))) => {
+              if should_report_download {
+                let _ = app_handle.emit(
+                  "model:download-finished",
+                  ModelDownloadStatusPayload { model: model_name },
+                );
+              }
+
               if text.trim().is_empty() {
                 let app_error =
                   AppError::new("INFERENCE_EMPTY", "Пустой результат расшифровки");
@@ -114,6 +174,16 @@ pub fn spawn_inference_actor(
               cached_engine = Some(engine);
             }
             Ok(Err(error)) => {
+              if let Some(kind) = model_error_kind(&error) {
+                let _ = app_handle.emit(
+                  "model:download-error",
+                  ModelErrorPayload {
+                    message: error.to_string(),
+                    kind: kind.to_string(),
+                  },
+                );
+              }
+
               let app_error = AppError::new("INFERENCE", error.to_string());
               let _ = app_handle.emit(
                 "transcription:error",
@@ -146,6 +216,17 @@ fn copy_to_clipboard(text: &str) -> Result<(), AppError> {
     .map_err(|error| AppError::new("CLIPBOARD", error.to_string()))?;
 
   Ok(())
+}
+
+fn model_error_kind(error: &InferenceError) -> Option<&'static str> {
+  match error {
+    InferenceError::Download(_) => Some("download"),
+    InferenceError::ChecksumMismatch { .. } => Some("checksum"),
+    InferenceError::ModelConfig(_) => Some("config"),
+    InferenceError::Tokenizer(_) => Some("tokenizer"),
+    InferenceError::ModelLoad(_) => Some("model"),
+    _ => None,
+  }
 }
 
 fn build_model_config(config: &AppConfig) -> Result<WhisperModelConfig, AppError> {

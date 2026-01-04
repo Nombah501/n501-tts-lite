@@ -17,6 +17,21 @@ export type AudioStoppedPayload = {
   hasSamples: boolean
 }
 
+export type ModelDownloadProgressPayload = {
+  asset: string
+  downloadedBytes: number
+  totalBytes?: number
+}
+
+export type ModelStatusPayload = {
+  model: string
+}
+
+export type ModelErrorPayload = {
+  message: string
+  kind: string
+}
+
 export type AppErrorPayload = {
   error: {
     code: string
@@ -50,6 +65,31 @@ export const onAudioStarted = (handler: () => void) =>
 export const onAudioStopped = (
   handler: (payload: AudioStoppedPayload) => void,
 ) => listen<AudioStoppedPayload>('audio:stopped', (event) => handler(event.payload))
+
+export const onModelDownloadStarted = (
+  handler: (payload: ModelStatusPayload) => void,
+) =>
+  listen<ModelStatusPayload>('model:download-started', (event) =>
+    handler(event.payload),
+  )
+
+export const onModelDownloadProgress = (
+  handler: (payload: ModelDownloadProgressPayload) => void,
+) =>
+  listen<ModelDownloadProgressPayload>('model:download-progress', (event) =>
+    handler(event.payload),
+  )
+
+export const onModelDownloadFinished = (
+  handler: (payload: ModelStatusPayload) => void,
+) =>
+  listen<ModelStatusPayload>('model:download-finished', (event) =>
+    handler(event.payload),
+  )
+
+export const onModelDownloadError = (
+  handler: (payload: ModelErrorPayload) => void,
+) => listen<ModelErrorPayload>('model:download-error', (event) => handler(event.payload))
 
 export const onConfigUpdated = (
   handler: (payload: { config: AppConfig }) => void,

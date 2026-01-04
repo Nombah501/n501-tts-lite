@@ -5,9 +5,21 @@ import type { AppConfig } from '../services/tauri'
 type SettingsPanelProps = {
   config: AppConfig
   onSave: (next: AppConfig) => void
+  download: {
+    asset: string | null
+    downloadedBytes: number
+    totalBytes: number | null
+    progress: number | null
+  }
+  isDownloading: boolean
 }
 
-export const SettingsPanel = ({ config, onSave }: SettingsPanelProps) => {
+export const SettingsPanel = ({
+  config,
+  onSave,
+  download,
+  isDownloading,
+}: SettingsPanelProps) => {
   const [modelName, setModelName] = useState(config.model)
   const [modelUrl, setModelUrl] = useState(config.modelUrl)
   const [modelSha256, setModelSha256] = useState(config.modelSha256)
@@ -19,6 +31,8 @@ export const SettingsPanel = ({ config, onSave }: SettingsPanelProps) => {
     { value: 'alt+shift+space', label: 'Alt+Shift+Space' },
     { value: 'cmd+shift+space', label: 'Cmd+Shift+Space (macOS)' },
   ]
+
+  const percent = download.progress ? Math.round(download.progress * 100) : null
 
   return (
     <section className="panel">
@@ -86,6 +100,24 @@ export const SettingsPanel = ({ config, onSave }: SettingsPanelProps) => {
           Можно менять хоткей между Ctrl/Alt и Cmd для macOS. Изменение применяется
           сразу после сохранения.
         </p>
+        {isDownloading && (
+          <div className="download-panel">
+            <div className="download-row">
+              <span className="download-label">
+                Загрузка: {download.asset ?? 'model'}
+              </span>
+              {percent !== null && (
+                <span className="download-percent">{percent}%</span>
+              )}
+            </div>
+            <div className="download-bar">
+              <div
+                className="download-progress"
+                style={{ width: `${percent ?? 0}%` }}
+              />
+            </div>
+          </div>
+        )}
         <p className="field-hint">
           Нужны URL и SHA256 для загрузки и проверки модели. Файл сохраняется в
           кэш приложения.
