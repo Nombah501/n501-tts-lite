@@ -1,0 +1,19 @@
+[dependencies]
+tauri = { version = "2", features = ["shell-open"] }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+tauri-cli = { version = "2", features = [] }
+
+[target."cfg(all(not(windows), target_os = \"macos\".dependencies]
+cocoa = "0.26"
+
+[target."cfg(all(not(windows), target_os = \"macos\".dependencies]
+objc = "0.2"
+
+[profile.release]
+panic = "abort"
+codegen-units = 'lto'
+strip = true
+lto = true
+opt-level = "z"
